@@ -1,0 +1,29 @@
+const express = require('express');
+require('dotenv').config();
+const { dbConnection } = require('./db/config');
+
+//ejecutar la base mongod
+
+//Crear el servidor de express
+const app = express();
+
+//Base de datos
+dbConnection();
+
+//Directorio Publico
+app.use(express.static('public'));
+
+//Lectura y parseo del body
+app.use(express.json());
+
+//Rutas
+app.use('/api/auth',require('./routes/auth'));
+
+
+
+//Escuchar las peticiones
+app.listen(process.env.PORT, ()=>{
+    console.log(`Servidor escuchando en el puerto ${process.env.PORT}`);
+});
+
+
