@@ -1,6 +1,7 @@
 const { response } = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { generateJWT } = require("../helpers/jwt");
 
 const createUser = async (req, res = response) => {
   const { email, password } = req.body;
@@ -17,10 +18,12 @@ const createUser = async (req, res = response) => {
     const salt = bcrypt.genSaltSync();
     user.password = bcrypt.hashSync(password, salt);
     await user.save();
+    const token = await generateJWT(user.id, user.name);
     res.status(201).json({
       ok: true,
       uid: user.id,
       name: user.name,
+      token,
     });
   } catch (error) {
     console.error(error);
@@ -48,11 +51,13 @@ const loginUser = async (req, res = response) => {
         message: "Invalid credentials",
       });
     }
+    const token = await generateJWT(user.id, user.name);
+
     res.json({
       ok: true,
       uid: user.id,
       name: user.name,
-      message: "login",
+      token,
     });
   } catch (error) {
     console.error(error);
@@ -63,9 +68,13 @@ const loginUser = async (req, res = response) => {
   }
 };
 
-const renewUser = (req, res = response) => {
+const renewUser = async (req, res = response) => {
+  const { uid, name } = req;
+  const token = await generateJWT(uid, name);
   res.json({
+    ok: true,
     message: "renew",
+    token,
   });
 };
 

@@ -1,5 +1,6 @@
 const express = require('express');
 require('dotenv').config();
+const cors = require('cors');
 const { dbConnection } = require('./db/config');
 
 //ejecutar la base mongod
@@ -9,6 +10,9 @@ const app = express();
 
 //Base de datos
 dbConnection();
+
+//cors
+app.use(cors());
 
 //Directorio Publico
 app.use(express.static('public'));
