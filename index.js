@@ -22,7 +22,7 @@ app.use(express.json());
 
 //Rutas
 app.use('/api/auth',require('./routes/auth'));
-
+app.use('/api/business',require('./routes/business'));
 
 
 //Escuchar las peticiones
