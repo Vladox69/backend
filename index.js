@@ -24,6 +24,9 @@ app.use(express.json());
 app.use('/api/auth',require('./routes/auth'));
 app.use('/api/business',require('./routes/business'));
 app.use('/api/location',require('./routes/location'));
+app.use('/api/staff',require('./routes/staff'));
+app.use('/api/tax', require('./routes/tax'));
+app.use('/api/payment-method', require('./routes/paymentMethod'));
 
 //Escuchar las peticiones
 app.listen(process.env.PORT, ()=>{
