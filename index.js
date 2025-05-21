@@ -27,6 +27,10 @@ app.use('/api/location',require('./routes/location'));
 app.use('/api/staff',require('./routes/staff'));
 app.use('/api/tax', require('./routes/tax'));
 app.use('/api/payment-method', require('./routes/paymentMethod'));
+app.use('/api/tax-rate', require('./routes/taxRate'));
+app.use('/api/environment-type', require('./routes/environmentType'));
+app.use('/api/customer-type', require('./routes/customerType'));
+app.use('/api/customer', require('./routes/customer'));
 
 //Escuchar las peticiones
 app.listen(process.env.PORT, ()=>{
