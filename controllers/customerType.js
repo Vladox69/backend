@@ -59,14 +59,13 @@ const updateCustomerType = async (req, res = response) => {
 const deleteCustomerType = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const customerType = await CustomerType.findById(id);
+    const customerType = await CustomerType.findByIdAndDelete(id);
     if (!customerType) {
       return res.status(404).json({
         ok: false,
         message: "Customer type not found",
       });
     }
-    await CustomerType.findByIdAndDelete(id);
     res.status(200).json({
       ok: true,
       message: "Customer type deleted successfully",

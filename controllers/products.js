@@ -3,9 +3,9 @@ const Product = require("../models/Product");
 
 const getProducts = async (req, res = response) => {
   try {
-    const products = await Product.find({})
-      .populate("iva", "name")
-      .populate("ice", "name");
+    const products = await Product.find()
+      .populate("iva", "description")
+      .populate("ice", "description");
     res.status(200).json({
       ok: true,
       products,
@@ -42,12 +42,13 @@ const updateProduct = async (req, res = response) => {
         message: "Product not found",
       });
     }
-    // Update product fields
-    product.set(req.body);
-    await product.save();
+    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+    await updatedProduct.save();
     res.status(200).json({
       ok: true,
-      product,
+      product: updatedProduct,
     });
   } catch (error) {
     return res.status(500).json({
@@ -59,14 +60,13 @@ const updateProduct = async (req, res = response) => {
 const deleteProduct = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const product = await Product.findById(id);
+    const product = await Product.findByIdAndDelete(id);
     if (!product) {
       return res.status(404).json({
         ok: false,
         message: "Product not found",
       });
     }
-    await product.remove();
     res.status(200).json({
       ok: true,
       message: "Product deleted",

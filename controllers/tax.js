@@ -58,14 +58,13 @@ const updateTax = async (req, res = response) => {
 const deleteTax = async (req, res = response) => {
     const { id } = req.params;
     try {
-        const tax = await Tax.findById(id);
+        const tax = await Tax.findByIdAndDelete(id);
         if (!tax) {
             return res.status(404).json({
                 ok: false,
                 message: 'Tax not found'
             });
         }
-        await Tax.findByIdAndDelete(id);
         res.status(200).json({
             ok: true,
             message: 'Tax deleted'

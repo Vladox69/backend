@@ -58,14 +58,13 @@ const updatePaymentMethod = async (req, res = response) => {
 const deletePaymentMethod = async (req, res = response) => {
     const { id } = req.params;
     try {
-        const paymentMethod = await PaymentMethod.findById(id);
+        const paymentMethod = await PaymentMethod.findByIdAndDelete(id);
         if (!paymentMethod) {
             return res.status(404).json({
                 ok: false,
                 message: 'Payment method not found'
             });
         }
-        await PaymentMethod.findByIdAndDelete(id);
         res.status(200).json({
             ok: true,
             message: 'Payment method deleted'

@@ -24,11 +24,10 @@ const createTaxRate = async (req, res = response) => {
 
 const updateTaxRate = async (req, res = response) => {
   const { id } = req.params;
-  const { tax, code, percentage, description } = req.body;
   try {
     const updatedTaxRate = await TaxRate.findByIdAndUpdate(
       id,
-      { tax, code, percentage, description },
+      req.body,
       { new: true }
     );
     if (!updatedTaxRate) {
@@ -44,14 +43,13 @@ const updateTaxRate = async (req, res = response) => {
 const deleteTaxRate = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const taxRate = await TaxRate.findById(id);
+    const taxRate = await TaxRate.findByIdAndDelete(id);
     if (!taxRate) {
       return res.status(404).json({
         ok: false,
         message: "Tax rate not found",
       });
     }
-    await TaxRate.findByIdAndDelete(id);
     res.status(200).json({
       ok: true,
       message: "Tax rate deleted successfully",

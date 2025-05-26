@@ -60,14 +60,13 @@ const updateEnvironmentType = async (req, res = response) => {
 const deleteEnvironmentType = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const environmentType = await EnvironmentType.findById(id);
+    const environmentType = await EnvironmentType.findByIdAndDelete(id);
     if (!environmentType) {
       return res.status(404).json({
         ok: false,
         message: "Environment type not found",
       });
     }
-    await EnvironmentType.findByIdAndDelete(id);
     res.status(200).json({
       ok: true,
       message: "Environment type deleted successfully",

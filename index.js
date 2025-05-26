@@ -32,6 +32,7 @@ app.use('/api/environment-type', require('./routes/environmentType'));
 app.use('/api/customer-type', require('./routes/customerType'));
 app.use('/api/customer', require('./routes/customer'));
 app.use('/api/product', require('./routes/product'));
+app.use('/api/sale', require('./routes/sale'));
 
 //Escuchar las peticiones
 app.listen(process.env.PORT, ()=>{

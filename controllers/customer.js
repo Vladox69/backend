@@ -58,14 +58,13 @@ const updateCustomer = async (req, res = response) => {
 const deleteCustomer = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const customer = await Customer.findById(id);
+    const customer = await Customer.findByIdAndDelete(id);
     if (!customer) {
       return res.status(404).json({
         ok: false,
         message: "Customer not found",
       });
     }
-    await Customer.findByIdAndDelete(id);
     res.status(200).json({
       ok: true,
       message: "Customer deleted successfully",
