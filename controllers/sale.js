@@ -4,7 +4,7 @@ const Sale = require("../models/Sale");
 const Customer = require("../models/Customer");
 const SaleDetail = require("../models/SaleDetail");
 const TaxDetail = require("../models/TaxDetail");
-const PaymentMethod = require("../models/PaymentMethod");
+const PaymentDetail = require("../models/PaymentDetail");
 
 const createSale = async (req, res = response) => {
   try {
@@ -22,16 +22,16 @@ const createSale = async (req, res = response) => {
 const getSales = async (req, res = response) => {
   try {
     const sales = await Sale.find()
-    .populate("location", "name")
-    .populate("customer", "fullName");
-    
+      .populate("location", "name")
+      .populate("customer", "fullName");
+
     res.status(200).json({
       ok: true,
       sales,
     });
   } catch (error) {
     console.log(error);
-    
+
     res.status(500).json({ ok: false, message: "Error fetching sales" });
   }
 };
@@ -84,15 +84,12 @@ const deleteSale = async (req, res = response) => {
   }
 };
 
-
 const generateInvoice = async (req, res = response) => {
-  console.log(req.body);
-  
-  /*const session = await mongoose.startSession();
+  const session = await mongoose.startSession();
   let customerId;
   session.startTransaction();
   try {
-    const { customerType, customer, sale, saleDetails, paymentMethods } =
+    const { customerType, customer, sale, saleDetails, paymentDetails } =
       req.body;
     if (customerType != "CONSUMIDOR FINAL") {
       const findCustomer = await Customer.findOne({
@@ -124,7 +121,7 @@ const generateInvoice = async (req, res = response) => {
 
     for (const detail of saleDetails) {
       const newTaxDetailIVA = new TaxDetail({
-        tax: detail.iva,
+        tax: detail.tax,
         saleDetail: detail._id,
         unitPriceWithoutTax: detail.unitPriceWithoutTax,
         unitPriceWithTax: detail.unitPriceWithTax,
@@ -132,33 +129,14 @@ const generateInvoice = async (req, res = response) => {
         totalPriceWithTax: detail.totalPriceWithTax,
       });
       await newTaxDetailIVA.save({ session });
-
-      /*const newTaxDetailICE = new TaxDetail({
-          tax: detail.ice,
-          saleDetail: detail._id,
-          unitPriceWithoutTax: detail.unitPriceWithoutTax,
-          unitPriceWithTax: detail.unitPriceWithTax,
-          totalPriceWithoutTax: detail.totalPriceWithoutTax,
-          totalPriceWithTax: detail.totalPriceWithTax,
-        });
-        await newTaxDetailICE.save({ session });
-        const newTaxDetailIRBPNR = new TaxDetail({
-          tax: detail.irbpnr,
-          saleDetail: detail._id,
-          unitPriceWithoutTax: detail.unitPriceWithoutTax,
-          unitPriceWithTax: detail.unitPriceWithTax,
-          totalPriceWithoutTax: detail.totalPriceWithoutTax,
-          totalPriceWithTax: detail.totalPriceWithTax,
-        });
-        await newTaxDetailIRBPNR.save({ session });
     }
 
-    for (const paymentMethod of paymentMethods) {
-      const newPaymentMethod = new PaymentMethod({
-        ...paymentMethod,
+    for (const paymentDetail of paymentDetails) {
+      const newPaymentDetail = new PaymentDetail({
+        ...paymentDetail,
         sale: savedSale._id,
       });
-      await newPaymentMethod.save({ session });
+      await newPaymentDetail.save({ session });
     }
 
     await session.commitTransaction();
@@ -170,13 +148,9 @@ const generateInvoice = async (req, res = response) => {
     await session.abortTransaction();
     res.status(500).json({
       ok: false,
-      message: "Error generating invoice",
+      message: error.message,
     });
-  }*/
-     res.status(201).json({
-      ok: true,
-      sale: "Return",
-    });
+  }
 };
 
 const generateSequencial = async (req, res = response) => {
@@ -202,8 +176,7 @@ const generateSequencial = async (req, res = response) => {
       message: "Error generating sequencial",
     });
   }
-}
-
+};
 
 module.exports = {
   createSale,
@@ -211,5 +184,5 @@ module.exports = {
   getSaleById,
   updateSale,
   deleteSale,
-  generateInvoice
+  generateInvoice,
 };

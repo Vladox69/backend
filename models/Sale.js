@@ -11,8 +11,8 @@ const SaleSchema = new Schema(
     totalWithoutTaxes: { type: Number, required: true }, // total sin impuestos
     totalDiscount: { type: Number, required: true }, // total descuento
     totalAmount: { type: Number, required: true }, // total importe (con impuestos)
-    receptionStatus: { type: String, enum: ["RECIBIDA", "RECHAZADA"], default: "RECIBIDA" }, // estado recepción
-    authorizationStatus: { type: String, enum: ["AUTORIZADA", "NO AUTORIZADA"], default: "AUTORIZADA" }, // estado autorización
+    receptionStatus: { type: String, enum: ["RECIBIDA", "RECHAZADA","PENDIENTE"], default: "RECIBIDA" }, // estado recepción
+    authorizationStatus: { type: String, enum: ["AUTORIZADA", "NO AUTORIZADA","PENDIENTE"], default: "AUTORIZADA" }, // estado autorización
     errorDescription: { type: String, default: "" }, // descripción de errores
     invoiceUrl: { type: String, default: "" }, // url de factura (PDF/ZIP)
     approvalUrl: { type: String, default: "" }, // url de aprobación (documento autorizado)
