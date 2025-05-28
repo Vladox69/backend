@@ -11,7 +11,8 @@ const generateInvoice = async (req, res = response) => {
   let customerId;
   session.startTransaction();
   try {
-    const { customerType, customer, sale ,saleDetails, paymentMethods} = req.body;
+    const { customerType, customer, sale, saleDetails, paymentMethods } =
+      req.body;
     if (customerType != "CONSUMIDOR FINAL") {
       const findCustomer = await Customer.findOne({
         identification: customer.identification,
@@ -41,17 +42,17 @@ const generateInvoice = async (req, res = response) => {
     }
 
     for (const detail of saleDetails) {
-        const newTaxDetailIVA = new TaxDetail({
-          tax: detail.iva,
-          saleDetail: detail._id,
-          unitPriceWithoutTax: detail.unitPriceWithoutTax,
-          unitPriceWithTax: detail.unitPriceWithTax,
-          totalPriceWithoutTax: detail.totalPriceWithoutTax,
-          totalPriceWithTax: detail.totalPriceWithTax,
-        });
-        await newTaxDetailIVA.save({ session });
+      const newTaxDetailIVA = new TaxDetail({
+        tax: detail.iva,
+        saleDetail: detail._id,
+        unitPriceWithoutTax: detail.unitPriceWithoutTax,
+        unitPriceWithTax: detail.unitPriceWithTax,
+        totalPriceWithoutTax: detail.totalPriceWithoutTax,
+        totalPriceWithTax: detail.totalPriceWithTax,
+      });
+      await newTaxDetailIVA.save({ session });
 
-        /*const newTaxDetailICE = new TaxDetail({
+      /*const newTaxDetailICE = new TaxDetail({
           tax: detail.ice,
           saleDetail: detail._id,
           unitPriceWithoutTax: detail.unitPriceWithoutTax,
@@ -92,3 +93,28 @@ const generateInvoice = async (req, res = response) => {
     });
   }
 };
+
+const generateSequencial = async (req, res = response) => {
+  const { establishment, pointOfSale } = req.body;
+  try {
+    const lastSale = await Sale.findOne({
+      establishment,
+      pointOfSale,
+    })
+      .sort({ createdAt: -1 })
+      .limit(1);
+    let sequencial = 1;
+    if (lastSale) {
+      sequencial = lastSale.sequencial + 1;
+    }
+    res.status(200).json({
+      ok: true,
+      sequencial,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Error generating sequencial",
+    });
+  }
+}

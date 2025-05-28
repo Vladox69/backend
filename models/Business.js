@@ -2,6 +2,7 @@ const { Schema, model } = require("mongoose");
 
 const BusinessSchema = Schema(
   {
+    environmentType: {type: Schema.Types.ObjectId, ref: "EnvironmentType", required: true }, // tipo de ambiente (1 = prueba, 2 = producción)
     businessName: { type: String, required: true }, // razon social
     tradeName: { type: String, required: true }, // nombre comercial
     taxId: { type: String, required: true , unique: true }, // identificacion (RUC)

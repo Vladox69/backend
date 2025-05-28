@@ -5,7 +5,8 @@ const getProducts = async (req, res = response) => {
   try {
     const products = await Product.find()
       .populate("iva", "description")
-      .populate("ice", "description");
+      .populate("ice", "description")
+      .populate("business", "name");
     res.status(200).json({
       ok: true,
       products,

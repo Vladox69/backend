@@ -3,7 +3,7 @@ const Customer = require("../models/Customer");
 
 const getCustomer = async (req, res = response) => {
   try {
-    const customer = await Customer.find();
+    const customer = await Customer.find().populate("identificationType", "description");
     res.status(200).json({
       ok: true,
       customer,

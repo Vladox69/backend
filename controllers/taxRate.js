@@ -3,7 +3,7 @@ const TaxRate = require("../models/TaxRate");
 
 const getTaxRate = async (req, res = response) => {
   try {
-    const taxRates = await TaxRate.find();
+    const taxRates = await TaxRate.find().populate("tax", "name");
     res.json(taxRates);
   } catch (error) {
     console.error(error);
