@@ -86,7 +86,9 @@ const deleteSale = async (req, res = response) => {
 
 
 const generateInvoice = async (req, res = response) => {
-  const session = await mongoose.startSession();
+  console.log(req.body);
+  
+  /*const session = await mongoose.startSession();
   let customerId;
   session.startTransaction();
   try {
@@ -148,7 +150,7 @@ const generateInvoice = async (req, res = response) => {
           totalPriceWithoutTax: detail.totalPriceWithoutTax,
           totalPriceWithTax: detail.totalPriceWithTax,
         });
-        await newTaxDetailIRBPNR.save({ session });*/
+        await newTaxDetailIRBPNR.save({ session });
     }
 
     for (const paymentMethod of paymentMethods) {
@@ -170,7 +172,11 @@ const generateInvoice = async (req, res = response) => {
       ok: false,
       message: "Error generating invoice",
     });
-  }
+  }*/
+     res.status(201).json({
+      ok: true,
+      sale: "Return",
+    });
 };
 
 const generateSequencial = async (req, res = response) => {
@@ -205,4 +211,5 @@ module.exports = {
   getSaleById,
   updateSale,
   deleteSale,
+  generateInvoice
 };
