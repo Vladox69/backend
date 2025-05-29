@@ -1,13 +1,21 @@
 const { response } = require("express");
 const mongoose = require("mongoose");
+const { create } = require("xmlbuilder2");
+const path = require("path");
+const fs = require("fs");
 const Sale = require("../models/Sale");
+const Business = require("../models/Business");
+const Location = require("../models/Location");
 const Customer = require("../models/Customer");
+const CustomerType = require("../models/CustomerType");
+const Product = require("../models/Product");
 const SaleDetail = require("../models/SaleDetail");
 const TaxDetail = require("../models/TaxDetail");
+const TaxRate = require("../models/TaxRate");
 const PaymentDetail = require("../models/PaymentDetail");
-const Location = require("../models/Location");
-const Business = require("../models/Business");
-const {generateAccessKey} = require("../helpers/generateAccessKey");
+const PaymentMethod = require("../models/PaymentMethod");
+
+const { generateAccessKey } = require("../helpers/generateAccessKey");
 
 const createSale = async (req, res = response) => {
   try {
@@ -157,11 +165,15 @@ const generateInvoice = async (req, res = response) => {
 };
 
 const updateInvoiceMetadata = async (req, res = response) => {
-  //const session = await mongoose.startSession();
-  // session.startTransaction();
   const { id } = req.params;
   try {
     const sale = await Sale.findById(id);
+    if (sale.sequential) {
+      return res.status(400).json({
+        ok: false,
+        message: "Sale already has a sequential number",
+      });
+    }
     const location = await Location.findById(sale.location);
     const business = await Business.findById(location.business);
     const result = await Sale.aggregate([
@@ -172,7 +184,14 @@ const updateInvoiceMetadata = async (req, res = response) => {
       },
       {
         $addFields: {
-          seqInt: { $toInt: "$sequential" }, // convierte string a int
+          seqInt: {
+            $convert: {
+              input: "$sequential",
+              to: "int",
+              onError: 0,
+              onNull: 0,
+            },
+          },
         },
       },
       {
@@ -186,16 +205,180 @@ const updateInvoiceMetadata = async (req, res = response) => {
     const last = result[0]?.seqInt || 0;
     const next = String(last + 1).padStart(9, "0");
     const accessKey = generateAccessKey(next, location, business);
-    console.log("Generated Access Key:", accessKey);
+    const urlInvoice = `${process.env.URL_INVOICE}/${accessKey}`;
+    const updatedSale = await Sale.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          sequential: next,
+          accessKey,
+          invoiceUrl: urlInvoice,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
     res.status(200).json({
       ok: true,
-      sequencial: next,
+      sale: updatedSale,
     });
   } catch (error) {
+    console.log("Error updating sale metadata:", error);
     res.status(500).json({
       ok: false,
-      message: "Error generating sequencial",
+      message: "Error updating sale metadata",
     });
+  }
+};
+
+const generateXmlInvoice = async (req, res = response) => {
+  try {
+    const { id } = req.params;
+
+    const sale = await Sale.findById(id)
+      .populate({
+        path: "customer",
+        populate: { path: "identificationType", model: CustomerType },
+      })
+      .populate("location");
+
+    const business = await Business.findById(sale.location.business).populate(
+      "environmentType"
+    );
+
+    const saleDetails = await SaleDetail.find({ sale: sale._id }).populate({
+      path: "product",
+      populate: ["iva", "ice"],
+    });
+
+    const taxDetails = await TaxDetail.find({
+      saleDetail: { $in: saleDetails.map((d) => d._id) },
+    }).populate("tax");
+
+    const paymentDetails = await PaymentDetail.find({
+      sale: sale._id,
+    }).populate("paymentMethod");
+
+    // CREAR XML
+    const doc = create({ version: "1.0", encoding: "UTF-8" }).ele("factura", {
+      id: "comprobante",
+      version: "1.1.0",
+    });
+
+    const infoTributaria = doc.ele("infoTributaria");
+    infoTributaria.ele("ambiente").txt(business.environmentType.code);
+    infoTributaria.ele("tipoEmision").txt("1");
+    infoTributaria.ele("razonSocial").txt(business.businessName);
+    infoTributaria.ele("nombreComercial").txt(business.tradeName);
+    infoTributaria.ele("ruc").txt(business.taxId);
+    infoTributaria.ele("claveAcceso").txt(sale.accessKey);
+    infoTributaria.ele("codDoc").txt("01");
+    infoTributaria.ele("estab").txt(sale.location.code);
+    infoTributaria.ele("ptoEmi").txt(sale.location.emissionPoint);
+    infoTributaria.ele("secuencial").txt(sale.sequential);
+    infoTributaria.ele("dirMatriz").txt(sale.location.address);
+
+    const infoFactura = doc.ele("infoFactura");
+    infoFactura
+      .ele("fechaEmision")
+      .txt(new Date(sale.issueDate).toLocaleDateString("es-EC"));
+    infoFactura
+      .ele("obligadoContabilidad")
+      .txt(business.accountingRequired ? "SI" : "NO");
+    infoFactura
+      .ele("tipoIdentificacionComprador")
+      .txt(sale.customer.identificationType.code);
+    infoFactura.ele("razonSocialComprador").txt(sale.customer.fullName);
+    infoFactura
+      .ele("identificacionComprador")
+      .txt(sale.customer.identification);
+    infoFactura.ele("direccionComprador").txt(sale.customer.address || "S/N");
+    infoFactura.ele("totalSinImpuestos").txt(sale.totalWithoutTaxes.toFixed(2));
+    infoFactura.ele("totalDescuento").txt(sale.totalDiscount.toFixed(2));
+
+    const totalConImpuestos = infoFactura.ele("totalConImpuestos");
+    taxDetails.forEach((tax) => {
+      totalConImpuestos
+        .ele("totalImpuesto")
+        .ele("codigo")
+        .txt(tax.tax.tax.code)
+        .up()
+        .ele("codigoPorcentaje")
+        .txt(tax.tax.code)
+        .up()
+        .ele("baseImponible")
+        .txt(tax.totalPriceWithoutTax.toFixed(2))
+        .up()
+        .ele("valor")
+        .txt((tax.totalPriceWithTax - tax.totalPriceWithoutTax).toFixed(2));
+    });
+
+    infoFactura.ele("propina").txt("0.00");
+    infoFactura.ele("importeTotal").txt(sale.totalAmount.toFixed(2));
+    infoFactura.ele("moneda").txt("DOLAR");
+
+    const pagos = infoFactura.ele("pagos");
+    paymentDetails.forEach((pd) => {
+      pagos
+        .ele("pago")
+        .ele("formaPago")
+        .txt(pd.paymentMethod.code)
+        .up()
+        .ele("total")
+        .txt(pd.value.toFixed(2));
+    });
+
+    const detalles = doc.ele("detalles");
+    for (const detail of saleDetails) {
+      const detalle = detalles.ele("detalle");
+      detalle.ele("codigoPrincipal").txt(detail.product._id.toString());
+      detalle.ele("codigoAuxiliar").txt(detail.product._id.toString());
+      detalle.ele("descripcion").txt(detail.product.name);
+      detalle.ele("cantidad").txt(detail.quantity.toString());
+      detalle.ele("precioUnitario").txt(detail.unitValue.toFixed(2));
+      detalle.ele("descuento").txt("0.00");
+      detalle
+        .ele("precioTotalSinImpuesto")
+        .txt(detail.valueWithoutTaxes.toFixed(2));
+
+      const impuestos = detalle.ele("impuestos");
+      const relatedTaxes = taxDetails.filter(
+        (td) => td.saleDetail.toString() === detail._id.toString()
+      );
+      relatedTaxes.forEach((td) => {
+        impuestos
+          .ele("impuesto")
+          .ele("codigo")
+          .txt(td.tax.tax.code)
+          .up()
+          .ele("codigoPorcentaje")
+          .txt(td.tax.code)
+          .up()
+          .ele("tarifa")
+          .txt((td.tax.percentage * 100).toFixed(0))
+          .up()
+          .ele("baseImponible")
+          .txt(td.totalPriceWithoutTax.toFixed(2))
+          .up()
+          .ele("valor")
+          .txt((td.totalPriceWithTax - td.totalPriceWithoutTax).toFixed(2));
+      });
+    }
+
+    const xmlString = doc.end({ prettyPrint: true });
+
+    // RETORNAR XML COMO RESPUESTA (sin guardar)
+    res.set("Content-Type", "application/xml");
+    res.set(
+      "Content-Disposition",
+      `attachment; filename=factura_${sale.accessKey}.xml`
+    );
+    res.send(xmlString);
+  } catch (error) {
+    console.error("XML generation error:", error);
+    res.status(500).json({ ok: false, message: "Error generating XML" });
   }
 };
 
@@ -206,5 +389,6 @@ module.exports = {
   updateSale,
   deleteSale,
   generateInvoice,
-  updateInvoiceMetadata
+  updateInvoiceMetadata,
+  generateXmlInvoice,
 };
