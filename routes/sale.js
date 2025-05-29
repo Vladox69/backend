@@ -10,7 +10,8 @@ const {
   getSaleById,
   updateSale,
   deleteSale,
-  generateInvoice
+  generateInvoice,
+  updateInvoiceMetadata
 } = require("../controllers/sale");
 
 router.use(jwtValidator);
@@ -20,5 +21,6 @@ router.post("/", createSale);
 router.put("/:id", updateSale);
 router.delete("/:id", deleteSale);
 router.post("/generate-invoice", generateInvoice);
+router.get("/update-invoice-metadata/:id", updateInvoiceMetadata);
 
 module.exports = router;

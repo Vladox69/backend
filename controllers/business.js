@@ -4,7 +4,9 @@ const Business = require("../models/Business");
 
 const getBusiness = async (req, res = response) => {
   try {
-    const business = await Business.find().populate("user", "name email");
+    const business = await Business.find()
+    .populate("user", "name email")
+    .populate("environmentType", "name");
     res.status(200).json({
       ok: true,
       business,

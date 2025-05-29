@@ -5,6 +5,9 @@ const Customer = require("../models/Customer");
 const SaleDetail = require("../models/SaleDetail");
 const TaxDetail = require("../models/TaxDetail");
 const PaymentDetail = require("../models/PaymentDetail");
+const Location = require("../models/Location");
+const Business = require("../models/Business");
+const {generateAccessKey} = require("../helpers/generateAccessKey");
 
 const createSale = async (req, res = response) => {
   try {
@@ -153,22 +156,40 @@ const generateInvoice = async (req, res = response) => {
   }
 };
 
-const generateSequencial = async (req, res = response) => {
-  const { establishment, pointOfSale } = req.body;
+const updateInvoiceMetadata = async (req, res = response) => {
+  //const session = await mongoose.startSession();
+  // session.startTransaction();
+  const { id } = req.params;
   try {
-    const lastSale = await Sale.findOne({
-      establishment,
-      pointOfSale,
-    })
-      .sort({ createdAt: -1 })
-      .limit(1);
-    let sequencial = 1;
-    if (lastSale) {
-      sequencial = lastSale.sequencial + 1;
-    }
+    const sale = await Sale.findById(id);
+    const location = await Location.findById(sale.location);
+    const business = await Business.findById(location.business);
+    const result = await Sale.aggregate([
+      {
+        $match: {
+          location: location._id,
+        },
+      },
+      {
+        $addFields: {
+          seqInt: { $toInt: "$sequential" }, // convierte string a int
+        },
+      },
+      {
+        $sort: { seqInt: -1 },
+      },
+      {
+        $limit: 1,
+      },
+    ]);
+
+    const last = result[0]?.seqInt || 0;
+    const next = String(last + 1).padStart(9, "0");
+    const accessKey = generateAccessKey(next, location, business);
+    console.log("Generated Access Key:", accessKey);
     res.status(200).json({
       ok: true,
-      sequencial,
+      sequencial: next,
     });
   } catch (error) {
     res.status(500).json({
@@ -185,4 +206,5 @@ module.exports = {
   updateSale,
   deleteSale,
   generateInvoice,
+  updateInvoiceMetadata
 };
