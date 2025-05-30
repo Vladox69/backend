@@ -1,8 +1,10 @@
 const { response } = require("express");
 const mongoose = require("mongoose");
 const { create } = require("xmlbuilder2");
+const { readFileSync } = require("fs");
 const path = require("path");
-const fs = require("fs");
+const signXml = require("../helpers/signXml");
+const uploadToCloudinary = require("../helpers/uploadToCloudinary");
 const Sale = require("../models/Sale");
 const Business = require("../models/Business");
 const Location = require("../models/Location");
@@ -255,7 +257,12 @@ const generateXmlInvoice = async (req, res = response) => {
 
     const taxDetails = await TaxDetail.find({
       saleDetail: { $in: saleDetails.map((d) => d._id) },
-    }).populate("tax");
+    })
+      .populate({
+        path: "tax",
+        populate: { path: "tax" },
+      })
+      .populate("saleDetail");
 
     const paymentDetails = await PaymentDetail.find({
       sale: sale._id,
@@ -303,10 +310,10 @@ const generateXmlInvoice = async (req, res = response) => {
       totalConImpuestos
         .ele("totalImpuesto")
         .ele("codigo")
-        .txt(tax.tax.tax.code)
+        .txt(tax?.tax?.tax?.code || "2")
         .up()
         .ele("codigoPorcentaje")
-        .txt(tax.tax.code)
+        .txt(tax?.tax?.code || "0")
         .up()
         .ele("baseImponible")
         .txt(tax.totalPriceWithoutTax.toFixed(2))
@@ -351,10 +358,10 @@ const generateXmlInvoice = async (req, res = response) => {
         impuestos
           .ele("impuesto")
           .ele("codigo")
-          .txt(td.tax.tax.code)
+          .txt(td?.tax?.tax?.code || "2")
           .up()
           .ele("codigoPorcentaje")
-          .txt(td.tax.code)
+          .txt(td?.tax?.code || "0")
           .up()
           .ele("tarifa")
           .txt((td.tax.percentage * 100).toFixed(0))
@@ -367,18 +374,34 @@ const generateXmlInvoice = async (req, res = response) => {
       });
     }
 
-    const xmlString = doc.end({ prettyPrint: true });
-
-    // RETORNAR XML COMO RESPUESTA (sin guardar)
-    res.set("Content-Type", "application/xml");
-    res.set(
-      "Content-Disposition",
-      `attachment; filename=factura_${sale.accessKey}.xml`
+    const xmlString = doc.end({ prettyPrint: false }).toString().trim();
+    console.log("XML generado:", xmlString);
+    
+    // Firma electrónica
+    const p12Path = path.join(
+      __dirname,
+      "../certs/11578175_identity_1803480399.p12"
     );
-    res.send(xmlString);
+    const p12Password = process.env.PASS_CERT;
+    const p12Buffer = readFileSync(p12Path);
+    const xmlFirmado = signXml(xmlString, p12Buffer, p12Password);
+
+    // Subida a Cloudinary
+    const result = await uploadToCloudinary(
+      xmlFirmado,
+      "facturas",
+      `factura_${sale.accessKey}`,
+      "xml"
+    );
+
+    res.status(200).json({
+      ok: true,
+      message: "Factura generada, firmada y subida correctamente",
+      url: result.secure_url,
+    });
   } catch (error) {
-    console.error("XML generation error:", error);
-    res.status(500).json({ ok: false, message: "Error generating XML" });
+    console.error("Error generating and signing XML:", error);
+    res.status(500).json({ ok: false, message: "Error generando XML firmado" });
   }
 };
 

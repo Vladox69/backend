@@ -1,12 +1,13 @@
 const { response } = require("express");
 const bcrypt = require("bcryptjs");
+const { encrypt } = require("../helpers/encryption");
 const Business = require("../models/Business");
 
 const getBusiness = async (req, res = response) => {
   try {
     const business = await Business.find()
-    .populate("user", "name email")
-    .populate("environmentType", "name");
+      .populate("user", "name email")
+      .populate("environmentType", "name");
     res.status(200).json({
       ok: true,
       business,
@@ -68,6 +69,32 @@ const updateBusiness = async (req, res = response) => {
     return res.status(500).json({
       ok: false,
       message: "Error updating business",
+    });
+  }
+};
+
+const updateCertificate = async (req, res = response) => {
+  const { id } = req.params;
+  const { certificateUrl, certificateKey } = req.body;
+  try {
+    const business = await Business.findById(id);
+    if (!business) {
+      return res.status(404).json({
+        ok: false,
+        message: "Business not found",
+      });
+    }
+    business.certificateUrl = certificateUrl;
+    business.certificateKey = certificateKey;
+    await business.save();
+    res.status(200).json({
+      ok: true,
+      message: "Certificate updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: "Error updating certificate",
     });
   }
 };

@@ -1,4 +1,4 @@
-const cloudinary = require('./cloudinary');
+const cloudinary = require('../db/cloudinary');
 
 /**
  * Sube un archivo como string a Cloudinary (recurso tipo RAW).
