@@ -1,52 +1,4 @@
-const { SignedXml } = require("xml-crypto");
-const { DOMParser } = require("xmldom");
 const forge = require("node-forge");
-
-/**
- * Firma un XML usando certificado .p12
- */
-const signXml = (xmlString, p12Buffer, p12Password) => {
-  // Cargar el .p12 desde Buffer
-  const p12Asn1 = forge.asn1.fromDer(p12Buffer.toString("binary"), false);
-  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, p12Password);
-
-  // Obtener la clave privada y el certificado
-  const keyBag = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
-  const certBag = p12.getBags({ bagType: forge.pki.oids.certBag });
-
-  const privateKey = forge.pki.privateKeyToPem(
-    keyBag[forge.pki.oids.pkcs8ShroudedKeyBag][0].key
-  );
-  const certificate = forge.pki.certificateToPem(
-    certBag[forge.pki.oids.certBag][0].cert
-  );
-
-  // Parsear XML
-  const xmlDoc = new DOMParser().parseFromString(xmlString, "text/xml");
-
-  // Crear firma
-  const sig = new SignedXml({
-    privateKey: privateKey,
-  });
-  sig.signatureAlgorithm = "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
-  sig.keyInfoProvider = {
-    getKeyInfo: () => `<X509Data></X509Data>`,
-  };
-  sig.canonicalizationAlgorithm =
-    "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
-
-  sig.signingKey = privateKey;
-
-  sig.addReference({
-    xpath: "//*[local-name(.)='factura']",
-    digestAlgorithm: "http://www.w3.org/2000/09/xmldsig#sha1",
-    transforms: ["http://www.w3.org/2000/09/xmldsig#enveloped-signature"],
-  });
-
-  sig.computeSignature(xmlDoc.toString());
-
-  return sig.getSignedXml();
-};
 
 const getP12 = async (path) => {
   const response = await fetch(path);
@@ -74,7 +26,7 @@ const sha1Base64 = (txt, encoding = "UTF-8") => {
   const md = forge.md.sha1.create();
   md.update(txt, encoding);
   const hash = md.digest().toHex();
-  const buffer = new window.Buffer.Buffer(hash, "hex");
+  const buffer = new Buffer.from(hash, "hex");
   const base64 = buffer.toString("base64");
   return base64;
 };
@@ -99,10 +51,14 @@ const getRandomNumber = (min = 990, max = 9999) => {
   return Math.floor(Math.random() * (max - min + 1) + min);
 };
 
-const sign = async (p12path, p12password, xmlpath) => {
+const signXml = async (p12path, p12password, xmlString) => {
   const arraybuffer = await getP12(p12path);
-  let xml = await getXml(xmlpath);
-
+  //let xml = await getXml(xmlpath);
+  /*const arraybuffer = p12Buffer.buffer.slice(
+    p12Buffer.byteOffset,
+    p12Buffer.byteOffset + p12Buffer.byteLength
+  );*/
+  let xml = xmlString;
   xml = xml
     .replace(/^\s+/g, " ")
     .trim()
@@ -284,53 +240,91 @@ const sign = async (p12path, p12password, xmlpath) => {
   );
 
   let SignedInfo = "";
-  SignedInfo += '<ds:SignedInfo Id="Signature-SignedInfo' + SignedInfo_number + '">';
-  SignedInfo += '\n<ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>';
-  SignedInfo += '</ds:CanonicalizationMethod>';
-  SignedInfo += '\n<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>';
-  SignedInfo += '</ds:SignatureMethod>';
-  SignedInfo +='\n<ds:Reference Id="SignedPropertiesID'+SignedPropertiesID_number+'" Type="http://uri.etsi.org/01903#SignedProperties" URI="#Signature'+Signature_number+'-SignedProperties'+Signedproperties_number+'">';
-  SignedInfo += '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
-  SignedInfo += '</ds:DigestMethod>';
-  SignedInfo += '\n<ds:DigestValue>';
+  SignedInfo +=
+    '<ds:SignedInfo Id="Signature-SignedInfo' + SignedInfo_number + '">';
+  SignedInfo +=
+    '\n<ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315">';
+  SignedInfo += "</ds:CanonicalizationMethod>";
+  SignedInfo +=
+    '\n<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1">';
+  SignedInfo += "</ds:SignatureMethod>";
+  SignedInfo +=
+    '\n<ds:Reference Id="SignedPropertiesID' +
+    SignedPropertiesID_number +
+    '" Type="http://uri.etsi.org/01903#SignedProperties" URI="#Signature' +
+    Signature_number +
+    "-SignedProperties" +
+    Signedproperties_number +
+    '">';
+  SignedInfo +=
+    '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
+  SignedInfo += "</ds:DigestMethod>";
+  SignedInfo += "\n<ds:DigestValue>";
   SignedInfo += sha1_SignedProperties;
-  SignedInfo += '</ds:DigestValue>';
-  SignedInfo += '\n</ds:Reference>';
-  SignedInfo += '\n<ds:Reference URI="#Certificate'+Certificate_number+'">';
-  SignedInfo += '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
-  SignedInfo += '</ds:DigestMethod>';
-  SignedInfo += '<ds:DigestValue>';
+  SignedInfo += "</ds:DigestValue>";
+  SignedInfo += "\n</ds:Reference>";
+  SignedInfo += '\n<ds:Reference URI="#Certificate' + Certificate_number + '">';
+  SignedInfo +=
+    '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
+  SignedInfo += "</ds:DigestMethod>";
+  SignedInfo += "<ds:DigestValue>";
   SignedInfo += sha1_KeyInfo;
-  SignedInfo += '</ds:DigestValue>';
-  SignedInfo += '\n</ds:Reference>';
-  SignedInfo += '\n<ds:Reference Id="Reference-ID-'+Reference_ID_number+'" URI="#comprobante">';
-  SignedInfo += '\n<ds:Transforms>';
-  SignedInfo += '\n<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">';
-  SignedInfo += '</ds:Transform>';
-  SignedInfo += '\n</ds:Transforms>';
-  SignedInfo += '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
-  SignedInfo += '<ds:DigestValue>';
-  SignedInfo += '\n</ds:DigestValue>';
+  SignedInfo += "</ds:DigestValue>";
+  SignedInfo += "\n</ds:Reference>";
+  SignedInfo +=
+    '\n<ds:Reference Id="Reference-ID-' +
+    Reference_ID_number +
+    '" URI="#comprobante">';
+  SignedInfo += "\n<ds:Transforms>";
+  SignedInfo +=
+    '\n<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature">';
+  SignedInfo += "</ds:Transform>";
+  SignedInfo += "\n</ds:Transforms>";
+  SignedInfo +=
+    '\n<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1">';
+  SignedInfo += "<ds:DigestValue>";
+  SignedInfo += "\n</ds:DigestValue>";
   SignedInfo += sha1_xml;
-  SignedInfo += '</ds:DigestMethod>';
-  SignedInfo += '\n</ds:Reference>';
-  SignedInfo += '\n</ds:SignedInfo>';
+  SignedInfo += "</ds:DigestMethod>";
+  SignedInfo += "\n</ds:Reference>";
+  SignedInfo += "\n</ds:SignedInfo>";
 
   const canonicalized_SignedInfo = SignedInfo.replace(
     "<ds:SignedInfo",
-    "<ds:SignedInfo "+ namespaces
-  )
-  
+    "<ds:SignedInfo " + namespaces
+  );
+
   const md = forge.md.sha1.create();
-  md.update(canonicalized_SignedInfo,'utf8');
+  md.update(canonicalized_SignedInfo, "utf8");
 
-  const signature = btoa(
-    key
-    .sign(md)
-    .match(/.{1,76}/g))
+  const signature = btoa(key.sign(md))
+    .match(/.{1,76}/g)
     .join("\n");
-  
 
+  let xades_bes = "";
+  xades_bes +=
+    "<ds:Signature" + namespaces + ' Id="Signature' + Signature_number + '">';
+  xades_bes += "\n" + SignedInfo;
+  xades_bes +=
+    '\n<ds:SignatureValue Id="SignatureValue' + SignatureValue_number + '">\n';
+  xades_bes += signature;
+  xades_bes += "\n</ds:SignatureValue>";
+  xades_bes += "\n" + KeyInfo;
+  xades_bes +=
+    '\n<ds:Object Id="Signature' +
+    Signature_number +
+    "-Object" +
+    Object_number +
+    '">';
+  xades_bes +=
+    '<etsi:QualifyingProperties Target="#Signature' + Signature_number + '">';
+  xades_bes += SignedProperties;
+  xades_bes += "</etsi:QualifyingProperties>";
+  xades_bes += "</ds:Object>";
+  xades_bes += "</ds:Signature>";
+
+  let signed = xml.replace(/(<[^<]+)$/, xades_bes + "$1");
+  return signed;
 };
 
 module.exports = signXml;

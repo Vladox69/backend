@@ -374,17 +374,11 @@ const generateXmlInvoice = async (req, res = response) => {
       });
     }
 
-    const xmlString = doc.end({ prettyPrint: false }).toString().trim();
-    console.log("XML generado:", xmlString);
-    
-    // Firma electrónica
-    const p12Path = path.join(
-      __dirname,
-      "../certs/11578175_identity_1803480399.p12"
-    );
+    const xmlString = doc.end({ prettyPrint: true }).toString().trim();
+
     const p12Password = process.env.PASS_CERT;
-    const p12Buffer = readFileSync(p12Path);
-    const xmlFirmado = signXml(xmlString, p12Buffer, p12Password);
+    const p12Buffer = 'http://localhost:4000/static/11578175_identity_1803480399.p12';
+    const xmlFirmado = await signXml(p12Buffer, p12Password, xmlString);
 
     // Subida a Cloudinary
     const result = await uploadToCloudinary(
