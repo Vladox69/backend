@@ -2,7 +2,6 @@ const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
 const { dbConnection } = require('./db/config');
-const path = require('path');
 //ejecutar la base mongod
 
 //Crear el servidor de express
@@ -19,7 +18,6 @@ app.use(express.static('public'));
 
 //Lectura y parseo del body
 app.use(express.json());
-app.use('/static', express.static(path.join(__dirname, 'certs')));
 
 //Rutas
 app.use('/api/auth',require('./routes/auth'));

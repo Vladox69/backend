@@ -1,9 +1,9 @@
 const { response } = require("express");
 const mongoose = require("mongoose");
 const { create } = require("xmlbuilder2");
-const { readFileSync } = require("fs");
+const cloudinary = require("../db/cloudinary");
+const fs = require("fs");
 const path = require("path");
-const signXml = require("../helpers/signXml");
 const uploadToCloudinary = require("../helpers/uploadToCloudinary");
 const Sale = require("../models/Sale");
 const Business = require("../models/Business");
@@ -16,6 +16,7 @@ const TaxDetail = require("../models/TaxDetail");
 const TaxRate = require("../models/TaxRate");
 const PaymentDetail = require("../models/PaymentDetail");
 const PaymentMethod = require("../models/PaymentMethod");
+const { signXml } = require("../helpers/signXml");
 
 const { generateAccessKey } = require("../helpers/generateAccessKey");
 
@@ -374,12 +375,17 @@ const generateXmlInvoice = async (req, res = response) => {
       });
     }
 
-    const xmlString = doc.end({ prettyPrint: true }).toString().trim();
-
+    const xmlString = doc.end({ prettyPrint: false }).toString().trim();
+    const publicId = "cert/11578175_identity_1803480399.p12";
+    const signedUrl = cloudinary.utils.private_download_url(publicId, "raw", {
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 5, 
+    });
     const p12Password = process.env.PASS_CERT;
-    const p12Buffer = 'http://localhost:4000/static/11578175_identity_1803480399.p12';
-    const xmlFirmado = await signXml(p12Buffer, p12Password, xmlString);
-
+    const xmlFirmado = await signXml(
+      signedUrl,
+      p12Password,
+      xmlString
+    );
     // Subida a Cloudinary
     const result = await uploadToCloudinary(
       xmlFirmado,

@@ -1,5 +1,8 @@
 const forge = require("node-forge");
-
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+/*
 const getP12 = async (path) => {
   const response = await fetch(path);
   if (!response.ok) {
@@ -53,11 +56,11 @@ const getRandomNumber = (min = 990, max = 9999) => {
 
 const signXml = async (p12path, p12password, xmlString) => {
   const arraybuffer = await getP12(p12path);
-  //let xml = await getXml(xmlpath);
-  /*const arraybuffer = p12Buffer.buffer.slice(
+  let xml = await getXml(xmlpath);
+  const arraybuffer = p12Buffer.buffer.slice(
     p12Buffer.byteOffset,
     p12Buffer.byteOffset + p12Buffer.byteLength
-  );*/
+  );
   let xml = xmlString;
   xml = xml
     .replace(/^\s+/g, " ")
@@ -326,5 +329,27 @@ const signXml = async (p12path, p12password, xmlString) => {
   let signed = xml.replace(/(<[^<]+)$/, xades_bes + "$1");
   return signed;
 };
+*/
+const signXml = async (p12RelativePath, p12Password, xml) => {
+  try {
 
-module.exports = signXml;
+    const payload = {
+      P12Url: p12RelativePath,
+      Password: p12Password,
+      Xml: xml,
+    };
+
+    const response = await axios.post(
+      "http://localhost:5045/api/sign/sign-xml",
+      payload,
+      { responseType: "arraybuffer" }
+    );
+
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error("Error al firmar el XML:", error);
+    throw new Error("Error al firmar el XML");
+  }
+};
+
+module.exports = { signXml };
