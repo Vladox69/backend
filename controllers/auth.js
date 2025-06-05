@@ -75,6 +75,8 @@ const renewUser = async (req, res = response) => {
     ok: true,
     message: "renew",
     token,
+    uid,
+    name
   });
 };
 

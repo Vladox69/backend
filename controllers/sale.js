@@ -376,13 +376,14 @@ const generateXmlInvoice = async (req, res = response) => {
     }
 
     const xmlString = doc.end({ prettyPrint: false }).toString().trim();
-    const publicId = "cert/11578175_identity_1803480399.p12";
+    const certUrl = "https://calidad.atiendo.ec/eojgprlg/Certificados/11578175_identity_1803480399.p12";
+    /*const publicId = "cert/11578175_identity_1803480399.p12";
     const signedUrl = cloudinary.utils.private_download_url(publicId, "raw", {
       expires_at: Math.floor(Date.now() / 1000) + 60 * 5, 
-    });
+    });*/
     const p12Password = process.env.PASS_CERT;
     const xmlFirmado = await signXml(
-      signedUrl,
+      certUrl,
       p12Password,
       xmlString
     );
