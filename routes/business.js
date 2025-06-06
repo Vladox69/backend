@@ -4,6 +4,7 @@ const { jwtValidator } = require("../middlewares/jwt-validator");
 const router = express.Router();
 const {
   getBusiness,
+  getBusinessByUserId,
   createBusiness,
   updateBusiness,
   deleteBusiness,
@@ -14,6 +15,7 @@ router.use(jwtValidator);
 
 // Routes
 router.get("/", getBusiness);
+router.get("/user/:id",getBusinessByUserId)
 router.post("/", createBusiness);
 router.put("/:id", updateBusiness);
 router.delete("/:id", deleteBusiness);

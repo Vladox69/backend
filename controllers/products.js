@@ -18,6 +18,26 @@ const getProducts = async (req, res = response) => {
     });
   }
 };
+
+const getProductsByBusinessId = async (req, res = response) => {
+  const { id } = req.params;
+  try {
+    const products = await Product.find({business:id})
+      .populate("iva", "description")
+      .populate("ice", "description")
+      .populate("business", "name");
+    res.status(200).json({
+      ok: true,
+      products,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: "Error fetching products",
+    });
+  }
+};
+
 const createProduct = async (req, res = response) => {
   try {
     const product = new Product(req.body);
@@ -81,6 +101,7 @@ const deleteProduct = async (req, res = response) => {
 };
 module.exports = {
   getProducts,
+  getProductsByBusinessId,
   createProduct,
   updateProduct,
   deleteProduct,

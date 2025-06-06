@@ -11,9 +11,10 @@ const jwtValidator = (req, res = response, next) => {
   }
 
   try {
-    const { uid, name } = jwt.verify(token, process.env.JWT_SECRET);
+    const { uid, name , role} = jwt.verify(token, process.env.JWT_SECRET);
     req.uid = uid;
     req.name = name;
+    req.role = role;
   } catch (error) {
     return res.status(401).json({
       ok: false,

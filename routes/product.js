@@ -6,6 +6,7 @@ const router = express.Router();
 
 const {
   getProducts,
+  getProductsByBusinessId,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -13,6 +14,7 @@ const {
 
 router.use(jwtValidator);
 router.get("/", getProducts);
+router.get("/business/:id", getProductsByBusinessId);
 router.post("/", [
   check("name", "Name is required").not().isEmpty(),
   check("pvp", "PVP is required").isNumeric(),

@@ -20,6 +20,24 @@ const getBusiness = async (req, res = response) => {
   }
 };
 
+const getBusinessByUserId = async (req, res = response) => {
+  const { id } = req.params;
+  try {
+    const business = await Business.findOne({ user: id })
+      .populate("user", "name email")
+      .populate("environmentType", "name");
+    res.status(200).json({
+      ok: true,
+      business,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: "Error fetching business",
+    });
+  }
+};
+
 const createBusiness = async (req, res = response) => {
   const { taxId } = req.body;
   try {
@@ -123,6 +141,7 @@ const deleteBusiness = async (req, res = response) => {
 
 module.exports = {
   getBusiness,
+  getBusinessByUserId,
   createBusiness,
   updateBusiness,
   deleteBusiness,

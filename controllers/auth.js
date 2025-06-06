@@ -18,11 +18,12 @@ const createUser = async (req, res = response) => {
     const salt = bcrypt.genSaltSync();
     user.password = bcrypt.hashSync(password, salt);
     await user.save();
-    const token = await generateJWT(user.id, user.name);
+    const token = await generateJWT(user.id, user.name, user.role);
     res.status(201).json({
       ok: true,
       uid: user.id,
       name: user.name,
+      role:user.role,
       token,
     });
   } catch (error) {
@@ -51,12 +52,13 @@ const loginUser = async (req, res = response) => {
         message: "Invalid credentials",
       });
     }
-    const token = await generateJWT(user.id, user.name);
+    const token = await generateJWT(user.id, user.name,user.role);
 
     res.json({
       ok: true,
       uid: user.id,
       name: user.name,
+      role:user.role,
       token,
     });
   } catch (error) {
@@ -69,14 +71,15 @@ const loginUser = async (req, res = response) => {
 };
 
 const renewUser = async (req, res = response) => {
-  const { uid, name } = req;
-  const token = await generateJWT(uid, name);
+  const { uid, name, role } = req;
+  const token = await generateJWT(uid, name, role);
   res.json({
     ok: true,
     message: "renew",
     token,
     uid,
-    name
+    name,
+    role
   });
 };
 
