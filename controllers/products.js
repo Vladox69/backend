@@ -22,7 +22,8 @@ const getProducts = async (req, res = response) => {
 const getProductsByBusinessId = async (req, res = response) => {
   const { id } = req.params;
   try {
-    const products = await Product.find({business:id})
+    const products = await Product.find({ business: id })
+      .limit(10)
       .populate("iva", "description")
       .populate("ice", "description")
       .populate("business", "name");
@@ -99,10 +100,47 @@ const deleteProduct = async (req, res = response) => {
     });
   }
 };
+
+const searchProducts = async (req, res = response) => {
+  const { q = "", limit = 20, business } = req.query;
+  const searchTerm = q.trim().toLowerCase();
+  const maxResults = parseInt(limit);
+
+  if (!searchTerm) {
+    return res.status(400).json({
+      ok: false,
+      message: "Se requiere un término de búsqueda (q)",
+    });
+  }
+
+  const filters = {name: { $regex: searchTerm, $options: "i" }, };
+
+  if (business) {filters.business = business; }
+
+  try {
+    const products = await Product.find(filters)
+      .limit(maxResults)
+      .populate("iva", "description")
+      .populate("ice", "description");
+
+    res.status(200).json({
+      ok: true,
+      products,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      ok: false,
+      message: "Error al buscar productos",
+    });
+  }
+};
+
 module.exports = {
   getProducts,
   getProductsByBusinessId,
   createProduct,
   updateProduct,
   deleteProduct,
+  searchProducts
 };
