@@ -9,6 +9,7 @@ const {
   createCustomer,
   updateCustomer,
   deleteCustomer,
+  searchCustomerByIdentification
 } = require("../controllers/customer");
 router.use(jwtValidator);
 router.get("/", getCustomer);
@@ -26,5 +27,6 @@ router.post(
 );
 router.put("/:id", updateCustomer);
 router.delete("/:id", deleteCustomer);
+router.get('/search', searchCustomerByIdentification);
 
 module.exports = router;
