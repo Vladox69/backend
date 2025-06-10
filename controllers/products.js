@@ -109,7 +109,7 @@ const searchProducts = async (req, res = response) => {
   if (!searchTerm) {
     return res.status(400).json({
       ok: false,
-      message: "Se requiere un término de búsqueda (q)",
+      message: "Search term is required",
     });
   }
 
@@ -131,7 +131,7 @@ const searchProducts = async (req, res = response) => {
     console.error(error);
     return res.status(500).json({
       ok: false,
-      message: "Error al buscar productos",
+      message: "Error searching products",
     });
   }
 };

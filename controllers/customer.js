@@ -3,7 +3,10 @@ const Customer = require("../models/Customer");
 
 const getCustomer = async (req, res = response) => {
   try {
-    const customer = await Customer.find().populate("identificationType", "description");
+    const customer = await Customer.find().populate(
+      "identificationType",
+      "description"
+    );
     res.status(200).json({
       ok: true,
       customer,
@@ -77,9 +80,47 @@ const deleteCustomer = async (req, res = response) => {
   }
 };
 
+const searchCustomerByIdentification = async (req, res = response) => {
+  const { q = "" } = req.query;
+  const searchTerm = q.trim().toLowerCase();
+
+  if (!searchTerm) {
+    return res.status(400).json({
+      ok: false,
+      message: "Search term is required",
+    });
+  }
+
+  const filters = { identification: { $regex: searchTerm, $options: "i" } };
+
+  try {
+    const customer = await Customer.findOne(filters);
+
+    if (!customer) {
+      return res.status(200).json({
+        ok: true,
+        message: "Customer not found",
+        customer: null,
+      });
+    }
+
+    res.status(200).json({
+      ok: true,
+      customer,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      ok: false,
+      message: "Error searching customer",
+    });
+  }
+};
+
 module.exports = {
   getCustomer,
   createCustomer,
   updateCustomer,
   deleteCustomer,
+  searchCustomerByIdentification,
 };
