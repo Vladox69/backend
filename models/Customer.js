@@ -7,6 +7,7 @@ const CustomerSchema = new Schema(
     identificationType: { type: Schema.Types.ObjectId, ref: "CustomerType", required: true }, // Relación con tipo de identificación (CustomerType)
     email: { type: String, required: false }, // Puede ser opcional
     phone: { type: String, required: false }, // También puede ser opcional
+    address: { type: String, required: false }
   },
   {
     timestamps: true,

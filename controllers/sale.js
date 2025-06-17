@@ -2,8 +2,6 @@ const { response } = require("express");
 const mongoose = require("mongoose");
 const { create } = require("xmlbuilder2");
 const cloudinary = require("../db/cloudinary");
-const fs = require("fs");
-const path = require("path");
 const uploadToCloudinary = require("../helpers/uploadToCloudinary");
 const Sale = require("../models/Sale");
 const Business = require("../models/Business");
@@ -269,6 +267,13 @@ const generateXmlInvoice = async (req, res = response) => {
       sale: sale._id,
     }).populate("paymentMethod");
 
+    const fechaEmision = new Intl.DateTimeFormat("es-EC", {
+      timeZone: "America/Guayaquil", // Asegura hora de Ecuador
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(sale.issueDate));
+
     // CREAR XML
     const doc = create({ version: "1.0", encoding: "UTF-8" }).ele("factura", {
       id: "comprobante",
@@ -289,9 +294,7 @@ const generateXmlInvoice = async (req, res = response) => {
     infoTributaria.ele("dirMatriz").txt(sale.location.address);
 
     const infoFactura = doc.ele("infoFactura");
-    infoFactura
-      .ele("fechaEmision")
-      .txt(new Date(sale.issueDate).toLocaleDateString("es-EC"));
+    infoFactura.ele("fechaEmision").txt(fechaEmision);
     infoFactura
       .ele("obligadoContabilidad")
       .txt(business.accountingRequired ? "SI" : "NO");
@@ -325,7 +328,7 @@ const generateXmlInvoice = async (req, res = response) => {
 
     infoFactura.ele("propina").txt("0.00");
     infoFactura.ele("importeTotal").txt(sale.totalAmount.toFixed(2));
-    infoFactura.ele("moneda").txt("DOLAR");
+    infoFactura.ele("moneda").txt("USD");
 
     const pagos = infoFactura.ele("pagos");
     paymentDetails.forEach((pd) => {
@@ -337,6 +340,8 @@ const generateXmlInvoice = async (req, res = response) => {
         .ele("total")
         .txt(pd.value.toFixed(2));
     });
+    infoFactura.ele("valorRetIva").txt("0.00");
+    infoFactura.ele("valorRetRenta").txt("0.00");
 
     const detalles = doc.ele("detalles");
     for (const detail of saleDetails) {
@@ -353,7 +358,7 @@ const generateXmlInvoice = async (req, res = response) => {
 
       const impuestos = detalle.ele("impuestos");
       const relatedTaxes = taxDetails.filter(
-        (td) => td.saleDetail.toString() === detail._id.toString()
+        (td) => td.saleDetail._id.toString() === detail._id.toString()
       );
       relatedTaxes.forEach((td) => {
         impuestos
@@ -376,17 +381,14 @@ const generateXmlInvoice = async (req, res = response) => {
     }
 
     const xmlString = doc.end({ prettyPrint: false }).toString().trim();
-    const certUrl = "https://calidad.atiendo.ec/eojgprlg/Certificados/11578175_identity_1803480399.p12";
+    const certUrl =
+      "https://calidad.atiendo.ec/eojgprlg/Certificados/11578175_identity_1803480399.p12";
     /*const publicId = "cert/11578175_identity_1803480399.p12";
     const signedUrl = cloudinary.utils.private_download_url(publicId, "raw", {
       expires_at: Math.floor(Date.now() / 1000) + 60 * 5, 
     });*/
     const p12Password = process.env.PASS_CERT;
-    const xmlFirmado = await signXml(
-      certUrl,
-      p12Password,
-      xmlString
-    );
+    const xmlFirmado = await signXml(certUrl, p12Password, xmlString);
     // Subida a Cloudinary
     const result = await uploadToCloudinary(
       xmlFirmado,
@@ -395,14 +397,21 @@ const generateXmlInvoice = async (req, res = response) => {
       "xml"
     );
 
+    // Actualizar la venta con la URL del XML firmado
+    const updatedSale = await Sale.findByIdAndUpdate(
+      id,
+      { invoiceUrl: result.secure_url },
+      { new: true }
+    );
+
     res.status(200).json({
       ok: true,
-      message: "Factura generada, firmada y subida correctamente",
-      url: result.secure_url,
+      message: "Invoice generated, signed and uploaded correctly",
+      sale: updatedSale,
     });
   } catch (error) {
     console.error("Error generating and signing XML:", error);
-    res.status(500).json({ ok: false, message: "Error generando XML firmado" });
+    res.status(500).json({ ok: false, message: "Error generating signed XML" });
   }
 };
 

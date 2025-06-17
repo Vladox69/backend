@@ -5,7 +5,7 @@ const getCustomer = async (req, res = response) => {
   try {
     const customer = await Customer.find().populate(
       "identificationType",
-      "description"
+      "description code"
     );
     res.status(200).json({
       ok: true,
@@ -94,15 +94,8 @@ const searchCustomerByIdentification = async (req, res = response) => {
   const filters = { identification: { $regex: searchTerm, $options: "i" } };
 
   try {
-    const customer = await Customer.findOne(filters);
-
-    if (!customer) {
-      return res.status(200).json({
-        ok: true,
-        message: "Customer not found",
-        customer: null,
-      });
-    }
+    const customer = await Customer.findOne(filters)
+          .populate("identificationType", "description code length");
 
     res.status(200).json({
       ok: true,
