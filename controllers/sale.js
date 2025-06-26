@@ -101,9 +101,8 @@ const generateInvoice = async (req, res = response) => {
   let customerId;
   session.startTransaction();
   try {
-    const { customerType, customer, sale, saleDetails, paymentDetails } =
-      req.body;
-    if (customerType != "CONSUMIDOR FINAL") {
+    const { customer, sale, saleDetails, paymentDetails } = req.body;
+    if (customer.identificationType.description != "VENTA A CONSUMIDOR FINAL") {
       const findCustomer = await Customer.findOne({
         identification: customer.identification,
       }).session(session);
@@ -169,7 +168,7 @@ const updateInvoiceMetadata = async (req, res = response) => {
   const { id } = req.params;
   try {
     const sale = await Sale.findById(id);
-    if (sale.sequential) {
+    if (sale.sequential != "not") {
       return res.status(400).json({
         ok: false,
         message: "Sale already has a sequential number",
@@ -309,21 +308,39 @@ const generateXmlInvoice = async (req, res = response) => {
     infoFactura.ele("totalSinImpuestos").txt(sale.totalWithoutTaxes.toFixed(2));
     infoFactura.ele("totalDescuento").txt(sale.totalDiscount.toFixed(2));
 
+    const impuestosAgrupados = {};
+
+    taxDetails.forEach((taxDetail) => {
+      const taxId = taxDetail.tax._id.toString();
+
+      if (!impuestosAgrupados[taxId]) {
+        impuestosAgrupados[taxId] = {
+          tax: taxDetail.tax,
+          baseImponible: 0,
+          valor: 0,
+        };
+      }
+
+      impuestosAgrupados[taxId].baseImponible += taxDetail.totalPriceWithoutTax;
+      impuestosAgrupados[taxId].valor +=
+        taxDetail.totalPriceWithTax - taxDetail.totalPriceWithoutTax;
+    });
+
     const totalConImpuestos = infoFactura.ele("totalConImpuestos");
-    taxDetails.forEach((tax) => {
+    Object.values(impuestosAgrupados).forEach((imp) => {
       totalConImpuestos
         .ele("totalImpuesto")
         .ele("codigo")
-        .txt(tax?.tax?.tax?.code || "2")
+        .txt(imp.tax.tax.code) 
         .up()
         .ele("codigoPorcentaje")
-        .txt(tax?.tax?.code || "0")
+        .txt(imp.tax.code) 
         .up()
         .ele("baseImponible")
-        .txt(tax.totalPriceWithoutTax.toFixed(2))
+        .txt(imp.baseImponible.toFixed(2))
         .up()
         .ele("valor")
-        .txt((tax.totalPriceWithTax - tax.totalPriceWithoutTax).toFixed(2));
+        .txt(imp.valor.toFixed(2));
     });
 
     infoFactura.ele("propina").txt("0.00");
@@ -415,6 +432,29 @@ const generateXmlInvoice = async (req, res = response) => {
   }
 };
 
+const getSalesByBusiness = async (req, res = response) => {
+  const { businessId } = req.params;
+  try {
+    const locations = await Location.find({ business: businessId });
+    const locationIds = locations.map((loc) => loc._id.toString());
+    const sales = await Sale.find({ location: { $in: locationIds } })
+      .populate("customer", "identification fullName")
+      .populate("location", "code emissionPoint");
+
+    if (!sales || sales.length === 0) {
+      return res.status(404).json({ ok: false, message: "No sales found" });
+    }
+
+    res.status(200).json({
+      ok: true,
+      sales,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ ok: false, message: "Error fetching sales" });
+  }
+};
+
 module.exports = {
   createSale,
   getSales,
@@ -424,4 +464,5 @@ module.exports = {
   generateInvoice,
   updateInvoiceMetadata,
   generateXmlInvoice,
+  getSalesByBusiness,
 };

@@ -1,0 +1,92 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  font-size: 11px;
+}
+
+.contenedor-factura {
+  border: 1px solid #333;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid #444;
+  padding-bottom: 10px;
+}
+
+.emisor {
+  width: 60%;
+}
+
+.info-comprobante {
+  width: 35%;
+  text-align: right;
+}
+
+.info-comprobante img {
+  width: 100%;
+  max-width: 250px;
+  margin-top: 10px;
+}
+
+.info-cliente, .formas-pago {
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+}
+
+.detalles table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.detalles th, .detalles td {
+  border: 1px solid #999;
+  padding: 6px;
+  text-align: left;
+}
+
+.detalles th {
+  background-color: #f0f0f0;
+}
+
+.totales {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.totales table {
+  width: 300px;
+  border-collapse: collapse;
+}
+
+.totales td {
+  border: 1px solid #999;
+  padding: 5px;
+}
+
+footer {
+  margin-top: 30px;
+  font-size: 10px;
+  text-align: center;
+}
+
+.formas-pago table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.formas-pago th, .formas-pago td {
+  border: 1px solid #999;
+  padding: 6px;
+  text-align: left;
+}
+
+.formas-pago th {
+  background-color: #f0f0f0;
+}

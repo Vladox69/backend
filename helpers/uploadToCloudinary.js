@@ -17,6 +17,7 @@ const uploadToCloudinary = async (fileString, folder, publicId, format = "xml") 
         public_id: `${folder}/${publicId}`,
         format,
         overwrite: true,
+        type: "authenticated",
       },
       (error, result) => {
         if (error) return reject(error);

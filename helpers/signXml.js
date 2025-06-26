@@ -340,7 +340,7 @@ const signXml = async (p12RelativePath, p12Password, xml) => {
     };
 
     const response = await axios.post(
-      "http://localhost:5045/api/sign/sign-xml",
+      process.env.SIGN_MICROSERVICE_URL_PROD,
       payload,
       { responseType: "arraybuffer" }
     );

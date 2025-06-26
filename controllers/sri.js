@@ -122,7 +122,6 @@ const authorizeXML = async (req, res = response) => {
     const parsed = await parseStringPromise(response.data, {
       explicitArray: false,
     });
-
     const body = parsed["soap:Envelope"]?.["soap:Body"];
     const responseKey = Object.keys(body || {}).find((key) =>
       key.endsWith(":autorizacionComprobanteResponse")
@@ -141,6 +140,7 @@ const authorizeXML = async (req, res = response) => {
       estado: autorizacion.estado,
       fechaAutorizacion: autorizacion.fechaAutorizacion || null,
       numeroAutorizacion: autorizacion.numeroAutorizacion || null,
+      mensaje: autorizacion.mensajes?.mensaje || [],
     });
   } catch (error) {
     return res.json({

@@ -35,6 +35,8 @@ app.use('/api/sale', require('./routes/sale'));
 app.use('/api/sale-detail', require('./routes/saleDetail'));
 app.use('/api/payment-detail', require('./routes/paymentDetail'));
 app.use('/api/sri', require('./routes/sri'));
+app.use('/api/pdf', require('./routes/pdf'));
+app.use('/api/mail', require('./routes/mail'));
 
 //Escuchar las peticiones
 app.listen(process.env.PORT, ()=>{

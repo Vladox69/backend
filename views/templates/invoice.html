@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Factura</title>
+    <style>
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #444;
+        padding-bottom: 10px;
+        gap: 15px;
+      }
+
+      header img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .break-key {
+        word-break: break-word;
+        font-size: 10px;
+        margin-top: 5px;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        font-size: 11px;
+      }
+
+      .contenedor-factura {
+        border: 1px solid #333;
+        padding: 20px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #444;
+        padding-bottom: 10px;
+      }
+
+      .emisor {
+        width: 60%;
+      }
+
+      .info-comprobante {
+        width: 35%;
+        text-align: right;
+      }
+
+      .info-comprobante img {
+        width: 100%;
+        max-width: 250px;
+        margin-top: 10px;
+      }
+
+      .info-cliente,
+      .formas-pago {
+        margin-top: 20px;
+        border-top: 1px solid #ccc;
+        padding-top: 10px;
+      }
+
+      .detalles table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      .detalles th,
+      .detalles td {
+        border: 1px solid #999;
+        padding: 6px;
+        text-align: left;
+      }
+
+      .detalles th {
+        background-color: #f0f0f0;
+      }
+
+      .totales {
+        margin-top: 15px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .totales table {
+        width: 300px;
+        border-collapse: collapse;
+      }
+
+      .totales td {
+        border: 1px solid #999;
+        padding: 5px;
+      }
+
+      footer {
+        margin-top: 30px;
+        font-size: 10px;
+        text-align: center;
+      }
+
+      .formas-pago table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      .formas-pago th,
+      .formas-pago td {
+        border: 1px solid #999;
+        padding: 6px;
+        text-align: left;
+      }
+
+      .formas-pago th {
+        background-color: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="contenedor-factura">
+      <header>
+        <div style="width: 20%">
+          <img src="{{logoUrl}}" alt="Logo" style="max-width: 100px" />
+        </div>
+        <div class="emisor" style="width: 30%">
+          <h2>FACTURADOR ELECTRÓNICO</h2>
+          <p><strong>RUC:</strong> {{taxId}}</p>
+          <p><strong>Razón Social:</strong> {{businessName}}</p>
+          <p><strong>Nombre Comercial:</strong> {{tradeName}}</p>
+          <p><strong>Dirección Matriz:</strong> {{address}}</p>
+          <p><strong>Dirección Sucursal:</strong> {{address2}}</p>
+          <p><strong>Obligado a llevar contabilidad:</strong> NO</p>
+          <p><strong>Emite retención:</strong> NO</p>
+        </div>
+        <div class="info-comprobante" style="width: 50%">
+          <h3>FACTURA</h3>
+          <p><strong>No:</strong> {{code}}-{{emissionPoint}}-{{sequential}}</p>
+          <p><strong>Clave de Acceso:</strong></p>
+          <p class="break-key">{{accessKey}}</p>
+          <img src="{{codebar}}" alt="Código de barras" />
+        </div>
+      </header>
+
+      <section class="info-cliente">
+        <h4>Datos del Comprador</h4>
+        <p><strong>Nombre:</strong> {{fullName}}</p>
+        <p><strong>Identificación:</strong> {{identification}}</p>
+        <p><strong>Dirección:</strong> {{addressCustomer}}</p>
+        <p><strong>Fecha de Emisión:</strong> {{fechaEmision}}</p>
+      </section>
+
+      <section class="detalles">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Cantidad</th>
+              <th>Precio Unitario</th>
+              <th>Descuento</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{saleDetails}}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="totales">
+        <table>
+          <tr>
+            <td><strong>Subtotal:</strong></td>
+            <td>{{totalWithoutTaxes}}</td>
+          </tr>
+          <tr>
+            <td><strong>Descuento:</strong></td>
+            <td>0.00</td>
+          </tr>
+          <tr>
+            <td><strong>IVA 15%:</strong></td>
+            <td>{{totalAmount}}</td>
+          </tr>
+          <tr>
+            <td><strong>Total:</strong></td>
+            <td>{{totalAmount2}}</td>
+          </tr>
+        </table>
+      </section>
+
+      <section class="formas-pago">
+        <table>
+          <thead>
+            <tr>
+              <th>Forma de Pago</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{paymentDetails}}
+          </tbody>
+        </table>
+      </section>
+
+      <footer>
+        <p>
+          Esta factura es un documento electrónico generado por medios
+          informáticos.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

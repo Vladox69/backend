@@ -23,7 +23,7 @@ const getProductsByBusinessId = async (req, res = response) => {
   const { id } = req.params;
   try {
     const products = await Product.find({ business: id })
-      .limit(10)
+      .limit(15)
       .populate("iva", "description percentage")
       .populate("ice", "description percentage")
       .populate("business", "name");
