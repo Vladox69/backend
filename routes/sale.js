@@ -13,13 +13,15 @@ const {
   generateInvoice,
   updateInvoiceMetadata,
   generateXmlInvoice,
-  getSalesByBusiness
+  getSalesByBusiness,
+  getSalesStatsByBusiness,
 } = require("../controllers/sale");
 
 router.use(jwtValidator);
 router.get("/", getSales);
 router.get("/:id", getSaleById);
 router.get("/business/:businessId", getSalesByBusiness);
+router.get("/stats/:businessId", getSalesStatsByBusiness);
 router.post("/", createSale);
 router.put("/:id", updateSale);
 router.delete("/:id", deleteSale);

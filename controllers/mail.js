@@ -12,7 +12,7 @@ const sendMail = async (req, res = response) => {
       .populate("location");
 
     if (!sale) {
-      return res.status(404).json({ msg: "Sale not found" });
+      return res.status(404).json({ msg: "Sale not found", ok: false });
     }
     const htmlContent = getInvoiceHTML({
       businessName: sale.location.name,
@@ -63,10 +63,10 @@ const sendMail = async (req, res = response) => {
     // Send the email
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ msg: "Email sent successfully" });
+    res.status(200).json({ msg: "Email sent successfully", ok: true });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: "Error sending email" });
+    res.status(500).json({ msg: "Error sending email", ok: false });
   }
 };
 

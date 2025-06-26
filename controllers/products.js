@@ -120,8 +120,8 @@ const searchProducts = async (req, res = response) => {
   try {
     const products = await Product.find(filters)
       .limit(maxResults)
-      .populate("iva", "description")
-      .populate("ice", "description");
+      .populate("iva", "description percentage")
+      .populate("ice", "description percentage");
 
     res.status(200).json({
       ok: true,

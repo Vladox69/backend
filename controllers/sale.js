@@ -455,6 +455,96 @@ const getSalesByBusiness = async (req, res = response) => {
   }
 };
 
+const getSalesStatsByBusiness = async (req, res = response) => {
+  const { businessId } = req.params;
+
+  try {
+    const locations = await Location.find({ business: businessId });
+    const locationIds = locations.map(loc => loc._id);
+
+    if (locationIds.length === 0) {
+      return res.status(404).json({ ok: false, message: "No locations found for business" });
+    }
+
+    const topProducts = await SaleDetail.aggregate([
+      {
+        $lookup: {
+          from: "sales",
+          localField: "sale",
+          foreignField: "_id",
+          as: "saleInfo"
+        }
+      },
+      { $unwind: "$saleInfo" },
+      {
+        $match: {
+          "saleInfo.location": { $in: locationIds }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "product",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      { $unwind: "$productInfo" },
+      {
+        $group: {
+          _id: "$product",
+          name: { $first: "$productInfo.name" },
+          quantitySold: { $sum: "$quantity" },
+          totalRevenue: { $sum: "$totalValue" }
+        }
+      },
+      { $sort: { quantitySold: -1 } },
+      { $limit: 10 }
+    ]);
+
+    const topCustomers = await Sale.aggregate([
+      {
+        $match: {
+          location: { $in: locationIds }
+        }
+      },
+      {
+        $lookup: {
+          from: "customers",
+          localField: "customer",
+          foreignField: "_id",
+          as: "customerInfo"
+        }
+      },
+      { $unwind: "$customerInfo" },
+      {
+        $group: {
+          _id: "$customer",
+          name: { $first: "$customerInfo.fullName" },
+          identification: { $first: "$customerInfo.identification" },
+          totalSpent: { $sum: "$totalAmount" },
+          purchaseCount: { $sum: 1 }
+        }
+      },
+      { $sort: { totalSpent: -1 } },
+      { $limit: 10 }
+    ]);
+
+    res.status(200).json({
+      ok: true,
+      topProducts,
+      topCustomers
+    });
+
+  } catch (error) {
+    console.error("Error getting sales stats:", error);
+    res.status(500).json({
+      ok: false,
+      message: "Error fetching statistics"
+    });
+  }
+};
+
 module.exports = {
   createSale,
   getSales,
@@ -465,4 +555,5 @@ module.exports = {
   updateInvoiceMetadata,
   generateXmlInvoice,
   getSalesByBusiness,
+  getSalesStatsByBusiness
 };
