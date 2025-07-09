@@ -406,16 +406,12 @@ const generateXmlInvoice = async (req, res = response) => {
       `factura_${sale.accessKey}`,
       "xml"
     );
-    console.log(result);
-    
     // Actualizar la venta con la URL del XML firmado
     const updatedSale = await Sale.findByIdAndUpdate(
       id,
       { invoiceUrl: result.secure_url },
       { new: true }
     );
-    console.log(updatedSale);
-
     res.status(200).json({
       ok: true,
       message: "Invoice generated, signed and uploaded correctly",
