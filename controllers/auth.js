@@ -35,6 +35,39 @@ const createUser = async (req, res = response) => {
   }
 };
 
+const updatePassword = async (req, res = response) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if(!user){
+      return res.status(404).json({
+        ok:false,
+        message:"User not found"
+      });
+    }
+    const salt = bcrypt.genSaltSync();
+    const newPassword = bcrypt.hashSync(password, salt);
+    const updatedUser = await User.findByIdAndUpdate(user.id,{
+      password:newPassword
+    },{new:true})
+    const token = await generateJWT(user.id, user.name, user.role);
+    res.status(201).json({
+      ok: true,
+      uid: updatedUser.id,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      token,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      ok: false,
+      message: "Error creating user",
+    });
+  }
+};
+
 const loginUser = async (req, res = response) => {
   const { email, password } = req.body;
   try {
@@ -85,6 +118,7 @@ const renewUser = async (req, res = response) => {
 
 module.exports = {
   createUser,
+  updatePassword,
   loginUser,
   renewUser,
 };
