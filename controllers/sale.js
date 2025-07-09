@@ -236,8 +236,6 @@ const updateInvoiceMetadata = async (req, res = response) => {
 const generateXmlInvoice = async (req, res = response) => {
   try {
     const { id } = req.params;
-    console.log(id);
-    
     const sale = await Sale.findById(id)
       .populate({
         path: "customer",
@@ -248,14 +246,10 @@ const generateXmlInvoice = async (req, res = response) => {
     const business = await Business.findById(sale.location.business).populate(
       "environmentType"
     );
-    console.log(business);
-    
     const saleDetails = await SaleDetail.find({ sale: sale._id }).populate({
       path: "product",
       populate: ["iva", "ice"],
     });
-    console.log(saleDetails);
-    
     const taxDetails = await TaxDetail.find({
       saleDetail: { $in: saleDetails.map((d) => d._id) },
     })
@@ -264,23 +258,15 @@ const generateXmlInvoice = async (req, res = response) => {
         populate: { path: "tax" },
       })
       .populate("saleDetail");
-    console.log(taxDetails);
-    
     const paymentDetails = await PaymentDetail.find({
       sale: sale._id,
     }).populate("paymentMethod");
-
-    console.log(paymentDetails);
-    
     const fechaEmision = new Intl.DateTimeFormat("es-EC", {
       timeZone: "America/Guayaquil", // Asegura hora de Ecuador
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }).format(new Date(sale.issueDate));
-    console.log(fechaEmision);
-        
-
     // CREAR XML
     const doc = create({ version: "1.0", encoding: "UTF-8" }).ele("factura", {
       id: "comprobante",
@@ -406,8 +392,6 @@ const generateXmlInvoice = async (req, res = response) => {
     }
 
     const xmlString = doc.end({ prettyPrint: false }).toString().trim();
-    console.log(xmlString);
-    
     const certUrl =
       "https://calidad.atiendo.ec/eojgprlg/Certificados/11578175_identity_1803480399.p12";
     /*const publicId = "cert/11578175_identity_1803480399.p12";
@@ -416,8 +400,6 @@ const generateXmlInvoice = async (req, res = response) => {
     });*/
     const p12Password = process.env.PASS_CERT;
     const xmlFirmado = await signXml(certUrl, p12Password, xmlString);
-    console.log(xmlFirmado);
-    
     // Subida a Cloudinary
     const result = await uploadToCloudinary(
       xmlFirmado,
@@ -425,13 +407,15 @@ const generateXmlInvoice = async (req, res = response) => {
       `factura_${sale.accessKey}`,
       "xml"
     );
-
+    console.log(result);
+    
     // Actualizar la venta con la URL del XML firmado
     const updatedSale = await Sale.findByIdAndUpdate(
       id,
       { invoiceUrl: result.secure_url },
       { new: true }
     );
+    console.log(updatedSale);
 
     res.status(200).json({
       ok: true,

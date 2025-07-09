@@ -338,7 +338,7 @@ const signXml = async (p12RelativePath, p12Password, xml) => {
       Password: p12Password,
       Xml: xml,
     };
-
+    console.log(process.env.SIGN_MICROSERVICE_URL_PROD);
     const response = await axios.post(
       process.env.SIGN_MICROSERVICE_URL_PROD,
       payload,
