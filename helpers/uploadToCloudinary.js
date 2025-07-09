@@ -1,13 +1,12 @@
 const cloudinary = require('../db/cloudinary');
 
 /**
- * Sube un archivo como string a Cloudinary (recurso tipo RAW).
- * 
- * @param {string} fileString - Contenido del archivo (por ejemplo XML).
- * @param {string} folder - Carpeta dentro de Cloudinary (ej: 'facturas').
- * @param {string} publicId - Nombre del archivo (sin extensión).
- * @param {string} format - Formato del archivo ('xml', 'pdf', etc.).
- * @returns {Promise<object>} - Resultado de Cloudinary (incluye secure_url).
+ * Subir archivo RAW a Cloudinary.
+ * @param {string} fileString - Contenido del archivo (XML, etc.).
+ * @param {string} folder - Carpeta de Cloudinary.
+ * @param {string} publicId - Nombre del archivo sin extensión.
+ * @param {string} format - Formato del archivo (xml, pdf, etc.).
+ * @returns {Promise<object>} - Resultado de Cloudinary.
  */
 const uploadToCloudinary = async (fileString, folder, publicId, format = "xml") => {
   return new Promise((resolve, reject) => {
@@ -20,12 +19,24 @@ const uploadToCloudinary = async (fileString, folder, publicId, format = "xml") 
         type: "authenticated",
       },
       (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
+        if (error) {
+          console.error("Error al subir a Cloudinary:", error);
+          return reject(new Error(`Cloudinary error: ${error.message}`));
+        }
+        if (!result) {
+          console.error("No se obtuvo resultado al subir el archivo");
+          return reject(new Error("No se obtuvo resultado al subir el archivo"));
+        }
+        resolve(result); // Devolver el resultado si no hay error
       }
     );
 
-    stream.end(Buffer.from(fileString, "utf-8"));
+    try {
+      stream.end(Buffer.from(fileString, "utf-8"));
+    } catch (error) {
+      console.error("Error al procesar el archivo para subir:", error);
+      reject(new Error("Error al procesar el archivo para subir"));
+    }
   });
 };
 

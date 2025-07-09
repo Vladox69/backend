@@ -242,7 +242,6 @@ const generateXmlInvoice = async (req, res = response) => {
         populate: { path: "identificationType", model: CustomerType },
       })
       .populate("location");
-    console.log(sale);
     const business = await Business.findById(sale.location.business).populate(
       "environmentType"
     );
