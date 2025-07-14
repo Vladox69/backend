@@ -399,6 +399,7 @@ const generateXmlInvoice = async (req, res = response) => {
     });*/
     const p12Password = process.env.PASS_CERT;
     const xmlFirmado = await signXml(certUrl, p12Password, xmlString);
+    
     // Subida a Cloudinary
     const result = await uploadToCloudinary(
       xmlFirmado,

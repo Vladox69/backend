@@ -61,7 +61,7 @@ const receptionXML = async (req, res = response) => {
     }
 
     // 7. Si está devuelto, devolver errores
-    if (respuesta.estado === "DEVUELTA") {
+    if (respuesta.estado !== "") {
       const errores =
         respuesta.comprobantes?.comprobante?.mensajes?.mensaje || [];
 
